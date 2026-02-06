@@ -1,0 +1,149 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# ======================================================
+# Project metadata
+# ======================================================
+[project]
+name = "point-analysis"
+version = "0.1.0"
+description = "Change Point Analysis and Statistical Modeling of Brent Oil Prices"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+authors = [
+  { name = "Tibebu Kaleb", email = "wise.tibec@gmail.com" }
+]
+
+keywords = [
+  "time-series",
+  "change-point-detection",
+  "bayesian-inference",
+  "pymc",
+  "energy-markets",
+  "oil-prices"
+]
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Financial and Insurance Industry",
+  "Topic :: Scientific/Engineering :: Information Analysis",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12"
+]
+
+# ======================================================
+# Core dependencies
+# ======================================================
+dependencies = [
+  # Core scientific stack
+  "numpy",
+  "pandas",
+  "scipy",
+
+  # Visualization
+  "matplotlib",
+  "seaborn",
+
+  # Time series & stats
+  "statsmodels",
+
+  # Bayesian modeling
+  "pymc",
+  "arviz",
+
+  # Config & utilities
+  "pyyaml",
+  "python-dateutil",
+
+  # Logging & CLI helpers
+  "rich",
+  "tqdm"
+]
+
+# ======================================================
+# Optional dependency groups
+# ======================================================
+[project.optional-dependencies]
+
+dev = [
+  "black",
+  "ruff",
+  "mypy",
+  "pytest",
+  "pytest-cov",
+  "ipykernel"
+]
+
+notebooks = [
+  "jupyterlab",
+  "notebook"
+]
+
+dashboard = [
+  "flask",
+  "flask-cors",
+  "gunicorn"
+]
+
+docs = [
+  "mkdocs",
+  "mkdocs-material"
+]
+
+# ======================================================
+# Package discovery
+# ======================================================
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# ======================================================
+# Formatting & linting
+# ======================================================
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.venv
+  | build
+  | dist
+  | notebooks
+)/
+'''
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+select = ["E", "F", "I"]
+ignore = ["E501"]
+
+[tool.ruff.isort]
+known-first-party = ["point_analysis"]
+
+# ======================================================
+# Type checking
+# ======================================================
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+strict_optional = true
+
+# ======================================================
+# Pytest
+# ======================================================
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
