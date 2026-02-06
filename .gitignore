@@ -1,0 +1,108 @@
+# ======================================================
+# Python
+# ======================================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+.dist-info/
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# ======================================================
+# Jupyter / IPython
+# ======================================================
+.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+
+# ======================================================
+# Data files (raw & derived)
+# Keep structure, not data
+# ======================================================
+data/raw/*
+data/processed/*
+!data/raw/.keep
+!data/processed/.keep
+
+# ======================================================
+# Model artifacts
+# ======================================================
+models/*
+!models/.keep
+
+# PyMC / sampling outputs
+*.nc
+*.h5
+*.hdf5
+
+# ======================================================
+# Reports & figures
+# ======================================================
+reports/figures/*
+!reports/figures/.keep
+
+# ======================================================
+# Logs & runtime outputs
+# ======================================================
+logs/
+*.log
+
+# ======================================================
+# OS / Editor junk
+# ======================================================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# PyCharm / JetBrains
+.idea/
+
+# ======================================================
+# Frontend (React / dashboard)
+# ======================================================
+dashboard/node_modules/
+dashboard/build/
+dashboard/dist/
+dashboard/.env
+dashboard/.cache
+
+# ======================================================
+# Environment & secrets
+# ======================================================
+.env
+.env.*
+*.pem
+*.key
+*.crt
+
+# ======================================================
+# CI / Coverage
+# ======================================================
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+
+# ======================================================
+# Misc
+# ======================================================
+tmp/
+.cache/
+
+# Setup
+init_setup.sh
