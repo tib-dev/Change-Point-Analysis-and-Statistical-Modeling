@@ -256,5 +256,5 @@ npm start
 
 ## Author
 
-Tibebu Kaleb - ML Engineer | AI Engineer | GenAI | Data Scientist | Full-stack engineer
-![More](https://www.linkedin.com/in/tibeb/)
+- Tibebu Kaleb - ML Engineer | AI Engineer | GenAI | Data Scientist | Full-stack engineer
+- [![More](https://img.shields.io/badge/LinkedIn-View-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/tibeb)
