@@ -256,6 +256,5 @@ npm start
 
 ## Author
 
-Tibebu Kaleb
-Data Scientist
-Bayesian Modeling • Time Series Analysis • Energy Market Analytics
+Tibebu Kaleb - ML Engineer | AI Engineer | GenAI | Data Scientist | Full-stack engineer
+![More](https://www.linkedin.com/in/tibeb/)
