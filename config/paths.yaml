@@ -3,6 +3,7 @@ paths:
     data_dir: "data"
     raw_dir: "data/raw"
     processed_dir: "data/processed"
+    events_dir: "data/event"
   reports:
     reports_dir: "reports"
     plots_dir: "reports/plots"

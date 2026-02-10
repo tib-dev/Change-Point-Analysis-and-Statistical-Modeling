@@ -106,3 +106,4 @@ tmp/
 
 # Setup
 init_setup.sh
+dashboard/frontend/node_modules
