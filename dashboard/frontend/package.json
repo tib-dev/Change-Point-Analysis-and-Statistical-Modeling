@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "ra-data-simple-rest": "^5.14.1",
+    "react-admin": "^5.14.1",
+    "recharts": "^3.7.0"
+  }
+}
