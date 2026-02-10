@@ -78,12 +78,19 @@ def get_prices():
 
     return jsonify(df.to_dict(orient="records"))
 
-
 @app.route("/api/changepoints")
 def get_changepoints():
     df = load_changepoints()
     if df.empty:
         return jsonify({"message": "No changepoints found"}), 404
+
+    start = request.args.get("start")
+    end = request.args.get("end")
+
+    if start:
+        df = df[df["date"] >= pd.to_datetime(start)]
+    if end:
+        df = df[df["date"] <= pd.to_datetime(end)]
 
     df = df.assign(date=df["date"].dt.strftime("%Y-%m-%d"))
     df = clean_for_json(df)
@@ -96,6 +103,17 @@ def get_events():
     df = load_events()
     if df.empty:
         return jsonify({"message": "No events found"}), 404
+
+    start = request.args.get("start")
+    end = request.args.get("end")
+    category = request.args.get("category")
+
+    if start:
+        df = df[df["date"] >= pd.to_datetime(start)]
+    if end:
+        df = df[df["date"] <= pd.to_datetime(end)]
+    if category:
+        df = df[df["category"] == category]
 
     df = df.assign(date=df["date"].dt.strftime("%Y-%m-%d"))
     df = clean_for_json(df)
