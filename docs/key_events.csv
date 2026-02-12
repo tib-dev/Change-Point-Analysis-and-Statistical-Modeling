@@ -1,4 +1,4 @@
-﻿event_date,event_name,category,event_description
+date,event_name,category,event_description
 1987-11-30,OPEC 82nd Meeting,Energy Policy,"OPEC set a target price of $18 per barrel, signaling a shift away from the market-share wars of 1986 toward coordinated price stabilization."
 1989-11-09,Fall of the Berlin Wall,Geopolitical,"Marked the symbolic end of the Cold War, leading to the collapse of the Soviet Union and opening large Russian oil reserves to global markets."
 1990-08-02,Invasion of Kuwait,Conflict,"Iraq’s invasion of Kuwait caused an immediate supply shock, doubling oil prices and triggering the Gulf War."
@@ -14,3 +14,6 @@
 2020-04-20,COVID-19 Oil Shock,Financial,"A collapse in global demand and storage capacity during COVID-19 caused extreme price dislocations, including negative WTI prices and sharp Brent declines."
 2022-02-24,Invasion of Ukraine,Conflict,"Russia’s invasion of Ukraine triggered sanctions, supply re-routing, and a major global energy crisis."
 2022-09-26,Nord Stream Sabotage,Infrastructure,"Explosions damaged Nord Stream pipelines, permanently altering Europe’s energy relationship with Russia."
+2008-08-01,Post-Peak Slide,Economic,"Brent prices continued a sharp decline from the July all-time high of $147 as high prices triggered global demand destruction."
+2008-08-07,Russo-Georgian War,Geopolitical,"Conflict threatened the BTC pipeline corridor; caused a temporary price spike and volatility before economic fears resumed dominance."
+2008-08-31,USD Strengthening,Financial,"A surging US Dollar and deepening subprime crisis forced speculators to liquidate oil positions, driving Brent toward the $100 floor."
