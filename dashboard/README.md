@@ -98,3 +98,11 @@ Returns detected Bayesian regime shifts and impact metrics.
 Returns a human-readable summary of the most recent regime shift.
 
 “The dashboard allows users to filter prices and events by date and category, while visually aligning Bayesian-detected change points with external events to support exploratory causal analysis.”
+
+## Front End Demo
+
+![alt text](image.png)
+![alt text](image-1.png)
+![alt text](image-2.png)
+![alt text](image-3.png)
+![alt text](image-4.png)
