@@ -1,3 +1,4 @@
+import React, { useMemo, useCallback } from "react";
 import {
   LineChart,
   Line,
@@ -8,65 +9,70 @@ import {
   ResponsiveContainer,
   Brush,
   ReferenceLine,
+  Label,
 } from "recharts";
-import { useMemo, useCallback } from "react";
+import { debounce } from "@mui/material";
 import { useChartSync } from "./ChartSyncContext";
 import { useFilters } from "../../context/FilterContext";
 import {
   calculateLogReturns,
   calculateRollingVolatility,
 } from "../../utils/calculations";
-import { financialTheme } from "./ChartTheme";
-import { paddedDomain } from "../../utils/yAisPadding";
 import { CustomTooltip } from "./CustomTooltip";
 import { RegimeShading } from "./RegimeShading";
 import { EventMarkers } from "./EventMarkers";
-import { debounce } from "@mui/material";
+import { financialTheme } from "./ChartTheme";
+import { paddedDomain } from "../../utils/yAisPadding";
+import { ChangepointLabel } from "./ChangepointLabel";
 
 /* =====================================================
-   Types
+   Types & Interfaces
 ===================================================== */
-
-interface RawPoint {
+export interface RawPoint {
   date: string;
   price: number;
 }
 
-interface Event {
+export interface ChartEvent {
   date: string;
   title?: string;
   description?: string;
+  category?: string;
 }
 
-interface Regime {
+export interface Regime {
   start: number;
   end: number;
   type: "high" | "low";
 }
 
-interface Props {
+interface FinancialChartProps {
   rawData: RawPoint[];
-  events: Event[];
+  events: ChartEvent[];
   regimes: Regime[];
+  changePoints?: Array<{ date: string; title?: string }>;
 }
 
 /* =====================================================
    Component
 ===================================================== */
-
-export const FinancialChart = ({ rawData, events, regimes }: Props) => {
+export const FinancialChart = ({
+  rawData,
+  events,
+  regimes,
+  changePoints = [],
+}: FinancialChartProps) => {
   const { activeIndex, setActiveIndex } = useChartSync();
   const { metric, setDateRange } = useFilters();
 
-  const isPrice = metric === "price";
-  const isReturns = metric === "returns";
+  const isPrice = String(metric) === "price";
+  const isReturns = String(metric) === "returns";
 
-  /* =====================================================
-     1. Data Enrichment
-  ===================================================== */
-
+  /* -----------------------------------------------------
+     1. Data Transformation
+  ----------------------------------------------------- */
   const data = useMemo(() => {
-    if (!Array.isArray(rawData) || rawData.length === 0) return [];
+    if (!rawData?.length) return [];
 
     const sorted = [...rawData].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
@@ -74,7 +80,7 @@ export const FinancialChart = ({ rawData, events, regimes }: Props) => {
 
     const prices = sorted.map((d) => d.price);
     const returns = calculateLogReturns(prices);
-    const rollingVol = calculateRollingVolatility(returns); // correct
+    const rollingVol = calculateRollingVolatility(returns);
 
     return sorted.map((d, i) => ({
       ...d,
@@ -84,66 +90,85 @@ export const FinancialChart = ({ rawData, events, regimes }: Props) => {
     }));
   }, [rawData]);
 
-  /* =====================================================
-     2. Memoized Y Domains
-  ===================================================== */
+  /* -----------------------------------------------------
+     2. Mapping ChangePoints
+  ----------------------------------------------------- */
+  const changepointMarkers = useMemo(() => {
+    return changePoints.map((cp) => ({
+      timestamp: new Date(cp.date).getTime(),
+      label: cp.title || "Detected Change Point",
+    }));
+  }, [changePoints]);
 
-  const primaryDomain = useMemo(() => {
-    return paddedDomain(data, isPrice ? "price" : "returns");
-  }, [data, isPrice]);
+  /* -----------------------------------------------------
+     3. Event Anchoring & Domain
+  ----------------------------------------------------- */
+  const enrichedEvents = useMemo(() => {
+    if (!data.length || !events?.length) return [];
+    const dataMap = new Map(data.map((d) => [d.timestamp, d]));
+    return events
+      .map((ev) => {
+        const ts = new Date(ev.date).getTime();
+        const match = dataMap.get(ts);
+        if (!match) return null;
+        return {
+          ...ev,
+          timestamp: ts,
+          value: isPrice ? match.price : (match.returns ?? 0),
+        };
+      })
+      .filter((e): e is NonNullable<typeof e> => e !== null);
+  }, [events, data, isPrice]);
 
-  /* =====================================================
-     3. Debounced Brush
-  ===================================================== */
+  const primaryDomain = useMemo(
+    () => paddedDomain(data, isPrice ? "price" : "returns"),
+    [data, isPrice],
+  );
 
-  const debouncedSetDateRange = useMemo(
+  const debouncedSetRange = useMemo(
     () =>
-      debounce((start: string, end: string) => {
-        setDateRange(start, end);
-      }, 400),
+      debounce((start: string, end: string) => setDateRange(start, end), 300),
     [setDateRange],
   );
 
   const handleBrushChange = useCallback(
-    (state: any) => {
-      if (!state || state.startIndex == null || state.endIndex == null) return;
-
-      const start = data[state.startIndex]?.date;
-      const end = data[state.endIndex]?.date;
-
-      if (start && end) {
-        debouncedSetDateRange(start, end);
+    (range: any) => {
+      if (range?.startIndex !== undefined && range?.endIndex !== undefined) {
+        const start = data[range.startIndex]?.date;
+        const end = data[range.endIndex]?.date;
+        if (start && end) debouncedSetRange(start, end);
       }
     },
-    [data, debouncedSetDateRange],
+    [data, debouncedSetRange],
   );
 
   if (!data.length) return null;
-
-  /* =====================================================
-     4. Render
-  ===================================================== */
 
   return (
     <div
       style={{
         background: financialTheme.background,
-        padding: 20,
-        borderRadius: 12,
-        boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+        padding: "24px 16px",
+        borderRadius: 16,
+        boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+        border: "1px solid rgba(255,255,255,0.05)",
       }}
     >
       <ResponsiveContainer width="100%" height={450}>
         <LineChart
           data={data}
           onMouseMove={(e) => {
-            if (typeof e?.activeTooltipIndex === "number") {
-              setActiveIndex(e.activeTooltipIndex);
-            } else {
-              setActiveIndex(null);
-            }
+            // Only update if it's a number, otherwise default to null
+
+            const index =
+              typeof e?.activeTooltipIndex === "number"
+                ? e.activeTooltipIndex
+                : null;
+
+            setActiveIndex(index);
           }}
           onMouseLeave={() => setActiveIndex(null)}
+          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
         >
           <CartesianGrid
             stroke={financialTheme.grid}
@@ -151,80 +176,100 @@ export const FinancialChart = ({ rawData, events, regimes }: Props) => {
             strokeDasharray="3 3"
           />
 
+          {/* Layer 1: Regime Shading */}
+          <RegimeShading regimes={regimes} />
+
+          {/* =====================================================
+               Layer 2: SOLID RED CHANGE POINT OVERLAY
+          ===================================================== */}
+          {changepointMarkers.map((cp, idx) => (
+            <ReferenceLine
+              key={`cp-${idx}`}
+              x={cp.timestamp}
+              stroke="#d32f2f" // Matches the "Russia-Georgia War" reference
+              strokeWidth={2.5}
+              // isFront={true}
+            >
+              <Label
+                content={<ChangepointLabel value={cp.label} />}
+                position="top"
+              />
+            </ReferenceLine>
+          ))}
+
+          {/* Layer 3: Dynamic Hover Cursor (Subtle/Dashed) */}
+          {activeIndex !== null && data[activeIndex] && (
+            <ReferenceLine
+              x={data[activeIndex].timestamp}
+              stroke={financialTheme.axis}
+              strokeDasharray="3 3"
+              strokeWidth={1}
+            />
+          )}
+
+          {/* Layer 4: Axes */}
           <XAxis
             dataKey="timestamp"
             type="number"
             scale="time"
             domain={["dataMin", "dataMax"]}
-            tickFormatter={(unix) =>
-              new Date(unix).toLocaleDateString(undefined, {
-                year: "2-digit",
+            tickFormatter={(u) =>
+              new Date(u).toLocaleDateString(undefined, {
                 month: "short",
+                year: "2-digit",
               })
             }
             stroke={financialTheme.axis}
             tick={{ fontSize: 11 }}
           />
-
-          {/* Primary Axis */}
           <YAxis
             yAxisId="left"
-            orientation="left"
             domain={primaryDomain}
             stroke={isPrice ? financialTheme.price : financialTheme.returns}
-            tickFormatter={(v) => (isPrice ? `$${v.toFixed(2)}` : v.toFixed(3))}
+            tickFormatter={(v) =>
+              isPrice ? `$${v.toFixed(0)}` : `${(v * 100).toFixed(1)}%`
+            }
             tick={{ fontSize: 11 }}
           />
-
-          {/* Volatility Axis */}
           <YAxis
             yAxisId="right"
             orientation="right"
-            domain={[0, "auto"]}
             stroke={financialTheme.volatility}
-            tickFormatter={(v) => (v ? `${(v * 100).toFixed(1)}%` : "")}
+            tickFormatter={(v) => `${(v * 100).toFixed(0)}%`}
             tick={{ fontSize: 11 }}
           />
 
           <Tooltip
-            content={<CustomTooltip events={events} isReturns={isReturns} />}
+            content={
+              <CustomTooltip events={enrichedEvents} isReturns={isReturns} />
+            }
             isAnimationActive={false}
           />
 
-          {/* Crosshair */}
-          {activeIndex !== null && data[activeIndex] && (
-            <ReferenceLine
-              x={data[activeIndex].timestamp}
-              stroke="#64748b"
-              strokeDasharray="3 3"
-            />
-          )}
-
-          <RegimeShading regimes={regimes} />
-          <EventMarkers events={events} />
-
-          {/* Main Line */}
+          {/* Layer 5: Data Lines */}
           <Line
             yAxisId="left"
             type="monotone"
             dataKey={isPrice ? "price" : "returns"}
             stroke={isPrice ? financialTheme.price : financialTheme.returns}
+            strokeWidth={3}
             dot={false}
-            strokeWidth={2.5}
             isAnimationActive={false}
+            connectNulls
           />
-
-          {/* Volatility */}
           <Line
             yAxisId="right"
             type="monotone"
             dataKey="rollingVol"
             stroke={financialTheme.volatility}
-            dot={false}
             strokeWidth={1.5}
             strokeDasharray="5 5"
+            dot={false}
             isAnimationActive={false}
           />
+
+          {/* Layer 6: Foreground Markers */}
+          <EventMarkers events={enrichedEvents} />
 
           <Brush
             dataKey="timestamp"

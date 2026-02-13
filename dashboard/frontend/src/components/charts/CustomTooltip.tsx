@@ -1,4 +1,13 @@
 import { Box, Typography, Divider } from "@mui/material";
+import type { ChartEvent } from "./EventMarkers";
+
+interface TooltipProps {
+  active?: boolean;
+  payload?: any[];
+  label?: number; // Unix timestamp
+  events: ChartEvent[];
+  isReturns: boolean;
+}
 
 export const CustomTooltip = ({
   active,
@@ -6,17 +15,17 @@ export const CustomTooltip = ({
   label,
   events,
   isReturns,
-}: any) => {
-  if (!active || !payload?.length) return null;
+}: TooltipProps) => {
+  if (!active || !payload?.length || typeof label !== "number") return null;
 
-  // 1. Precise date matching for events
+  // Precise date matching for intel section
   const dateStr = new Date(label).toISOString().split("T")[0];
-  const event = events.find((e: any) => e.date === dateStr);
+  const event = events.find((e) => e.date === dateStr);
 
   return (
     <Box
       sx={{
-        bgcolor: "#0a0c10", // Deeper dark for high contrast
+        bgcolor: "#0a0c10",
         color: "#ffffff",
         p: 2,
         border: "1px solid #30363d",
@@ -25,7 +34,6 @@ export const CustomTooltip = ({
         minWidth: 240,
       }}
     >
-      {/* Date Header */}
       <Typography
         variant="caption"
         sx={{
@@ -44,10 +52,8 @@ export const CustomTooltip = ({
 
       <Divider sx={{ my: 1, borderColor: "#30363d" }} />
 
-      {/* Metrics Section */}
-      {payload.map((entry: any, index: number) => {
+      {payload.map((entry, index) => {
         const isVol = entry.dataKey === "rollingVol";
-
         return (
           <Box
             key={index}
@@ -73,13 +79,12 @@ export const CustomTooltip = ({
         );
       })}
 
-      {/* Market Intelligence Section */}
       {event && (
         <Box
           sx={{
             mt: 2,
             pt: 1.5,
-            borderTop: "2px solid #f59e0b", // Yellow Bloomberg Warning Bar
+            borderTop: "2px solid #f59e0b",
             bgcolor: "rgba(245, 158, 11, 0.05)",
             mx: -2,
             px: 2,
@@ -96,25 +101,27 @@ export const CustomTooltip = ({
               gap: 0.5,
             }}
           >
-            ● INTEL: {event.category || "MARKET EVENT"}
+            ● INTEL: {event.category?.toUpperCase() || "MARKET EVENT"}
           </Typography>
           <Typography
             variant="subtitle2"
-            sx={{ fontWeight: 700, lineHeight: 1.2, mt: 0.5, color: "#fff" }}
+            sx={{ fontWeight: 700, lineHeight: 1.2, mt: 0.5 }}
           >
             {event.title}
           </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: "grey.400",
-              mt: 0.5,
-              fontSize: "0.75rem",
-              fontStyle: "italic",
-            }}
-          >
-            {event.description}
-          </Typography>
+          {event.description && (
+            <Typography
+              variant="body2"
+              sx={{
+                color: "grey.400",
+                mt: 0.5,
+                fontSize: "0.75rem",
+                fontStyle: "italic",
+              }}
+            >
+              {event.description}
+            </Typography>
+          )}
         </Box>
       )}
     </Box>

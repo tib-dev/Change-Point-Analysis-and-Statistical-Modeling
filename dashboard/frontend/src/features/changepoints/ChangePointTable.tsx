@@ -8,162 +8,201 @@ import {
   Paper,
   Typography,
   Box,
-  Tooltip,
+  alpha,
+  useTheme,
+  Chip,
+  Stack,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 
-import { getChangePoints, type ChangePoint } from "./changepoint.service";
+import { getChangePoints } from "./changepoint.service";
 import { useFilters } from "../../context/FilterContext";
 import RegimeBadge from "./RegimeBadge";
 import LoadingState from "../../components/ui/LoadingState";
 import EmptyState from "../../components/ui/EmptyState";
 
 const ChangePointTable = () => {
+  const theme = useTheme();
   const { startDate, endDate, metric } = useFilters();
 
-  /* ============================
-     1. Data Fetching (Synced with Charts)
-  ============================ */
   const { data = [], isLoading } = useQuery({
     queryKey: ["changepoints", startDate, endDate],
     queryFn: () => getChangePoints({ start: startDate, end: endDate }),
-    // Prevents the 416 error from triggering infinite retries
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
 
-  /* ============================
-     2. Render States
-  ============================ */
   if (isLoading) return <LoadingState />;
 
   if (!data || data.length === 0) {
-    return (
-      <EmptyState message="No structural regime shifts detected for the selected period." />
-    );
+    return <EmptyState message="No structural regime shifts detected." />;
   }
 
   return (
     <TableContainer
       component={Paper}
       sx={{
-        boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-        borderRadius: 3,
+        boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+        borderRadius: 4,
         overflow: "hidden",
-        border: "1px solid",
-        borderColor: "divider",
+        border: `1px solid ${theme.palette.divider}`,
       }}
     >
-      <Table size="small" aria-label="regime shift table">
+      <Box
+        sx={{
+          p: 2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          bgcolor: "background.paper",
+        }}
+      >
+        <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: -0.5 }}>
+          Structural Regime Breaks
+        </Typography>
+        <Chip
+          label={`${data.length} Transitions Detected`}
+          size="small"
+          variant="outlined"
+          sx={{ fontWeight: 600, borderRadius: 1.5 }}
+        />
+      </Box>
+
+      <Table size="small">
         <TableHead>
-          <TableRow sx={{ bgcolor: "action.hover" }}>
-            <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Date</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Market Context</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Volatility Regime</TableCell>
+          <TableRow sx={{ bgcolor: alpha(theme.palette.action.hover, 0.5) }}>
+            <TableCell sx={{ fontWeight: 700, py: 2 }}>Date</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>
+              Market Context & Category
+            </TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>Regime State</TableCell>
             <TableCell sx={{ fontWeight: 700 }} align="right">
-              {metric === "price" ? "Return Shift (μ)" : "Risk Shift (σ)"}
+              {metric === "price" ? "Mean Shift (Δμ)" : "Volatility Shift (Δσ)"}
             </TableCell>
           </TableRow>
         </TableHead>
 
         <TableBody>
           {data.map((cp, i) => {
-            // Logic for Volatility Shift
             const volIncreased = cp.sigma_post_change > cp.sigma_pre_change;
-            const regimeLabel = volIncreased
-              ? "High Volatility"
-              : "Low Volatility";
-
-            // Logic for Mean Return Shift
             const muDiff = cp.mu_post_change - cp.mu_pre_change;
             const isPositiveShift = muDiff >= 0;
+
+            // Visualizing the magnitude of the shift
+            // If metric is price, we show the delta. If vol, we show the step change.
+            const magnitude =
+              metric === "price"
+                ? muDiff
+                : cp.sigma_post_change - cp.sigma_pre_change;
 
             return (
               <TableRow
                 key={`${cp.date}-${i}`}
                 hover
-                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                sx={{
+                  transition: "background-color 0.2s",
+                  "&:hover": {
+                    bgcolor: alpha(theme.palette.primary.main, 0.02),
+                  },
+                }}
               >
-                {/* Date Column */}
-                <TableCell sx={{ whiteSpace: "nowrap" }}>
-                  <Typography variant="body2" fontWeight={600}>
+                <TableCell>
+                  <Typography
+                    variant="body2"
+                    fontWeight={700}
+                    color="text.primary"
+                  >
                     {new Date(cp.date).toLocaleDateString(undefined, {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
                     })}
                   </Typography>
+                  <Typography variant="caption" color="text.disabled">
+                    Day Index: {i + 1}
+                  </Typography>
                 </TableCell>
 
-                {/* Event/Category Column */}
                 <TableCell>
-                  <Box>
+                  <Box sx={{ display: "flex", flexDirection: "column" }}>
                     <Typography
                       variant="body2"
-                      fontWeight={700}
-                      color="text.primary"
+                      fontWeight={600}
+                      color="primary.main"
                     >
-                      {cp.associated_event}
+                      {cp.associated_event || "Organic Market Shift"}
                     </Typography>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ textTransform: "uppercase", letterSpacing: 0.5 }}
-                    >
-                      {cp.event_category}
-                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1, mt: 0.5 }}>
+                      <Chip
+                        label={cp.event_category}
+                        size="small"
+                        sx={{
+                          height: 18,
+                          fontSize: "0.65rem",
+                          fontWeight: 800,
+                          textTransform: "uppercase",
+                          bgcolor: alpha(theme.palette.divider, 0.5),
+                        }}
+                      />
+                    </Box>
                   </Box>
                 </TableCell>
 
-                {/* Regime Badge Column */}
                 <TableCell>
-                  <RegimeBadge regime={regimeLabel} />
+                  <RegimeBadge
+                    regime={volIncreased ? "High Volatility" : "Low Volatility"}
+                  />
                 </TableCell>
 
-                {/* Shift Value Column */}
                 <TableCell align="right">
-                  <Tooltip
-                    title={
-                      metric === "price"
-                        ? "Change in average daily log-return"
-                        : "Change in standard deviation"
-                    }
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-end",
+                    }}
                   >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "flex-end",
-                        gap: 1,
-                      }}
-                    >
+                    <Stack direction="row" spacing={1} alignItems="center">
                       {metric === "price" ? (
                         <>
                           {isPositiveShift ? (
-                            <TrendingUpIcon fontSize="small" color="success" />
+                            <TrendingUpIcon
+                              sx={{ fontSize: 18, color: "success.main" }}
+                            />
                           ) : (
-                            <TrendingDownIcon fontSize="small" color="error" />
+                            <TrendingDownIcon
+                              sx={{ fontSize: 18, color: "error.main" }}
+                            />
                           )}
                           <Typography
                             variant="body2"
-                            fontWeight={700}
+                            fontWeight={800}
                             color={
                               isPositiveShift ? "success.main" : "error.main"
                             }
                           >
                             {isPositiveShift ? "+" : ""}
-                            {muDiff.toFixed(4)}
+                            {(muDiff * 100).toFixed(2)}%
                           </Typography>
                         </>
                       ) : (
-                        <Typography variant="body2" fontWeight={700}>
-                          {cp.sigma_post_change.toFixed(3)}
-                        </Typography>
+                        <Box sx={{ textAlign: "right" }}>
+                          <Typography
+                            variant="body2"
+                            fontWeight={800}
+                            color={volIncreased ? "warning.main" : "info.main"}
+                          >
+                            {(cp.sigma_post_change * 100).toFixed(2)}%
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            from {(cp.sigma_pre_change * 100).toFixed(2)}%
+                          </Typography>
+                        </Box>
                       )}
-                    </Box>
-                  </Tooltip>
+                    </Stack>
+                  </Box>
                 </TableCell>
               </TableRow>
             );

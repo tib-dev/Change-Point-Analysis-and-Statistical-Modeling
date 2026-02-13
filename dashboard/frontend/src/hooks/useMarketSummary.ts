@@ -1,20 +1,37 @@
 import { useMemo } from "react";
 import { usePrices } from "./usePrices";
 import { useRegimes } from "./useRegime";
+import type { PriceRecord } from "../utils/calculations";
 
-const useMarketSummary = () => {
-  const { data: prices, isLoading: pLoading, error: pError } = usePrices();
+// Define the enriched shape here
+export type EnrichedPriceRecord = PriceRecord & {
+  rollingVol?: number | null;
+};
+
+export interface MarketSummaryData {
+  price_shift: number;
+  volatility_change: number;
+  count: number;
+  event: string;
+}
+
+export const useMarketSummary = () => {
+  // Cast the data to the enriched type so TS knows rollingVol exists
+  const { data, isLoading: pLoading, error: pError } = usePrices();
+  const prices = data as EnrichedPriceRecord[] | undefined;
+
   const { data: regimes, isLoading: rLoading } = useRegimes();
 
-  const summary = useMemo(() => {
+  const summary = useMemo((): MarketSummaryData | null => {
     if (!prices || prices.length < 2) return null;
 
     const latest = prices[prices.length - 1];
     const prev = prices[prices.length - 2];
 
-    // Calculate simple metrics if backend summary isn't available
     const price_shift = latest.price - prev.price;
-    const volatility_change = (latest.rollingVol || 0) - (prev.rollingVol || 0);
+
+    // TypeScript now sees rollingVol because of EnrichedPriceRecord
+    const volatility_change = (latest.rollingVol ?? 0) - (prev.rollingVol ?? 0);
 
     return {
       price_shift,
@@ -27,11 +44,5 @@ const useMarketSummary = () => {
     };
   }, [prices, regimes]);
 
-  return {
-    data: summary,
-    isLoading: pLoading || rLoading,
-    error: pError,
-  };
+  return { data: summary, isLoading: pLoading || rLoading, error: pError };
 };
-
-export default useMarketSummary;
